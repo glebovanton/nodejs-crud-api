@@ -4,11 +4,16 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "nodemon",
+    "prestart": "kill-port $PORT",
+    "dev": "npm run prestart && nodemon src/server.ts",
     "build": "tsc",
     "start": "node dist/index.js",
+    "start:dev": "npm run dev",
+    "start:multi": "cross-env MULTI=true npm run start:dev",
+    "start:prod": "npm run build && npm start",
     "lint": "eslint 'src/**/*.{ts,tsx}'",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "cannon": "npm run autocannon -c 200 -d 10 http://localhost:$PORT"
   },
   "keywords": [],
   "author": "",
@@ -26,6 +31,7 @@
     "prettier": "^3.3.3",
     "ts-node": "^10.9.2",
     "ts-node-dev": "^2.0.0",
-    "typescript": "^5.6.3"
+    "typescript": "^5.6.3",
+    "kill-port": "^2.0.1"
   }
 }
