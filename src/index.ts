@@ -9,7 +9,10 @@ const { PORT = 3000 } = process.env;
 function startServer(): void {
   http
       .createServer(userRequestListener)
-      .listen(PORT, () => console.log(`Server running on port ${PORT} & PID: ${process.pid}. API on http://localhost:${PORT}`));
+      .listen(PORT, () => {
+        console.log(`Server running on port ${PORT} & PID: ${process.pid}. API on http://localhost:${PORT}`);
+        console.log(`API on http://localhost:${PORT}/api/users`);
+      });
 }
 
 startCluster(startServer);
