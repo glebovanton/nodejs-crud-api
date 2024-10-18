@@ -1,5 +1,5 @@
 import * as http from 'node:http';
-import { getAllUsers, getUserById } from '../controllers/users';
+import { createUser, getAllUsers, getUserById } from '../controllers/users';
 
 export const userRequestListener: http.RequestListener = (req, res) => {
   const { method, url }: http.IncomingMessage = req;
@@ -17,9 +17,7 @@ export const userRequestListener: http.RequestListener = (req, res) => {
           }
           break;
         case 'POST':
-          res.statusCode = 200;
-          res.setHeader('Content-Type', 'text/plain');
-          res.end(`Hello World! ${userId}`);
+          createUser(req, res);
           break;
         case 'PUT':
           res.statusCode = 200;

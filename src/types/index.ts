@@ -1,12 +1,9 @@
-export interface User {
-  id: string;
+export interface UserDTO {
   username: string;
   age: number;
   hobbies: string[];
 }
 
-export interface UserInput {
-  username: string;
-  age: number;
-  hobbies: string[];
+export interface User extends UserDTO {
+  id: string;
 }
