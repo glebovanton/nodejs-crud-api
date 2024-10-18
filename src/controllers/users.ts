@@ -1,7 +1,7 @@
 import * as http from 'node:http';
 import { StatusCode } from 'status-code-enum'
 import { User } from '../types';
-import { getUsersInDb, getUserByIdInDb, addUserInDb, updateUserInDb } from '../db';
+import { getUsersInDb, getUserByIdInDb, addUserInDb, updateUserInDb, deleteUserInDb } from '../db';
 
 export const getAllUsers: http.RequestListener = (req: http.IncomingMessage, res: http.ServerResponse) => {
   try {
@@ -94,3 +94,23 @@ export const updateUser: http.RequestListener = (req: http.IncomingMessage, res:
     }
   });
 }
+
+export const deleteUser: http.RequestListener = (req: http.IncomingMessage, res: http.ServerResponse) => {
+  try {
+    const { url }: http.IncomingMessage = req;
+    const urlParts: (string | undefined)[] = url?.split('/').filter(Boolean) || [];
+    const [ b, p, userId ]: (string | undefined)[] = urlParts;
+    if (!userId) {
+      res.statusCode = StatusCode.ClientErrorNotFound;
+      res.end(JSON.stringify({ message: 'User id invalid' }));
+    } else {
+      deleteUserInDb(userId);
+      res.statusCode = StatusCode.SuccessNoContent;
+      res.setHeader('Content-Type', 'application/json');
+      res.end(JSON.stringify({ message: 'User deleted' }));
+    }
+  } catch (error) {
+    res.statusCode = StatusCode.ClientErrorBadRequest;
+    res.end(JSON.stringify({ message: 'Internal server error' }));
+  }
+};

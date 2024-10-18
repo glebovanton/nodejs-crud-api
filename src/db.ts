@@ -27,7 +27,7 @@ export const updateUserInDb = (id: string, user: User): User => {
   return { ...user, id };
 };
 
-export const deleteUserByIdInDb = (id: string) => {
+export const deleteUserInDb = (id: string) => {
   users = users.filter((user) => user.id !== id);
 };
 

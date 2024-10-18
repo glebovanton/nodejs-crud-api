@@ -1,5 +1,5 @@
 import * as http from 'node:http';
-import { createUser, getAllUsers, getUserById, updateUser } from '../controllers/users';
+import { createUser, deleteUser, getAllUsers, getUserById, updateUser } from '../controllers/users';
 
 export const userRequestListener: http.RequestListener = (req, res) => {
   const { method, url }: http.IncomingMessage = req;
@@ -23,9 +23,7 @@ export const userRequestListener: http.RequestListener = (req, res) => {
           updateUser(req, res);
           break;
         case 'DELETE':
-          res.statusCode = 200;
-          res.setHeader('Content-Type', 'text/plain');
-          res.end(`Hello World! ${userId}`);
+          deleteUser(req, res);
           break;
         default:
           res.writeHead(404, { 'Content-Type': 'application/json' });
