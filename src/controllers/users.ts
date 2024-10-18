@@ -1,7 +1,7 @@
 import * as http from 'node:http';
 import { StatusCode } from 'status-code-enum'
 import { User } from '../types';
-import { getUsersInDb, getUserByIdInDb, addUserInDb } from '../db';
+import { getUsersInDb, getUserByIdInDb, addUserInDb, updateUserInDb } from '../db';
 
 export const getAllUsers: http.RequestListener = (req: http.IncomingMessage, res: http.ServerResponse) => {
   try {
@@ -70,3 +70,27 @@ export const createUser: http.RequestListener = (req: http.IncomingMessage, res:
     res.end(JSON.stringify({ message: 'Method Not Allowed' }));
   }
 };
+
+export const updateUser: http.RequestListener = (req: http.IncomingMessage, res: http.ServerResponse) => {
+  let body = '';
+  req.on('data', (chunk) => {
+    body += chunk.toString();
+  });
+  req.on('end', () => {
+    try {
+      const user = JSON.parse(body);
+      if (!user) {
+        res.statusCode = StatusCode.ClientErrorBadRequest;
+        res.end(JSON.stringify({ message: 'User invalid' }));
+      } else {
+        const newUser: User = updateUserInDb(user.id, user);
+        res.statusCode = StatusCode.SuccessOK;
+        res.setHeader('Content-Type', 'application/json');
+        res.end(JSON.stringify(newUser));
+      }
+    } catch (error) {
+      res.statusCode = StatusCode.ServerErrorInternal;
+      res.end(JSON.stringify({ message: 'Internal server error' }));
+    }
+  });
+}

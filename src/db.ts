@@ -21,8 +21,10 @@ export const getUserByIdInDb = (id: string | undefined): User | undefined => id 
   users.find((user) => user.id === id) :
   undefined;
 
-export const updateUserByIdInDb = (id: string, user: User) => {
+export const updateUserInDb = (id: string, user: User): User => {
   users = users.map((u) => (u.id === id ? { ...user, id } : u));
+
+  return { ...user, id };
 };
 
 export const deleteUserByIdInDb = (id: string) => {
