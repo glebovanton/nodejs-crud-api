@@ -2,7 +2,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { User, UserDTO } from './types';
 
 let users: User[] = [{
-  id: '0',
+  id: uuidv4(),
   username: 'Admin',
   age: 30,
   hobbies: ['JS', 'TS']
@@ -21,14 +21,30 @@ export const getUserByIdInDb = (id: string | undefined): User | undefined => id 
   users.find((user) => user.id === id) :
   undefined;
 
-export const updateUserInDb = (id: string, user: User): User => {
+export const updateUserInDb = (id: string, user: UserDTO): User | undefined => {
+  const existingUser = users.find((u) => u.id === id);
+
+  if (!existingUser) {
+    return undefined;
+  }
+
   users = users.map((u) => (u.id === id ? { ...user, id } : u));
 
   return { ...user, id };
 };
 
-export const deleteUserInDb = (id: string) => {
-  users = users.filter((user) => user.id !== id);
+export const deleteUserInDb = (id: string): User | undefined => {
+  const userIndex = users.findIndex((user) => user.id === id);
+
+  if (userIndex === -1) {
+    return undefined;
+  }
+
+  const deletedUser = users[userIndex];
+
+  users.splice(userIndex, 1);
+
+  return deletedUser;
 };
 
 export const clearUsersInDb = () => {

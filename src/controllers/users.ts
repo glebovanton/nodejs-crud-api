@@ -1,7 +1,8 @@
 import * as http from 'node:http';
 import { StatusCode } from 'status-code-enum'
-import { User, UserMessage } from '../types';
+import { User, UserDTO, UserMessage } from '../types';
 import { getUsersInDb, getUserByIdInDb, addUserInDb, updateUserInDb, deleteUserInDb } from '../db';
+import { validateUserId, validateUserPayload } from '../helpers';
 
 export const getAllUsers: http.RequestListener = (req: http.IncomingMessage, res: http.ServerResponse) => {
   try {
@@ -21,6 +22,14 @@ export const getUserById: http.RequestListener = (req: http.IncomingMessage, res
     const { url }: http.IncomingMessage = req;
     const urlParts: (string | undefined)[] = url?.split('/').filter(Boolean) || [];
     const [ basePath, path, userId ]: (string | undefined)[] = urlParts;
+
+    if (!validateUserId(userId)) {
+      res.statusCode = StatusCode.ClientErrorBadRequest;
+      res.setHeader('Content-Type', 'application/json');
+      res.end(JSON.stringify({ message: UserMessage.UserInvalid }));
+      return;
+    }
+
     const user: User | undefined = getUserByIdInDb(userId);
     if (!user) {
       res.statusCode = StatusCode.ClientErrorNotFound;
@@ -46,11 +55,12 @@ export const createUser: http.RequestListener = (req: http.IncomingMessage, res:
 
     req.on('end', () => {
       try {
-        const user = JSON.parse(body);
+        const user: UserDTO = JSON.parse(body);
         const { username, age, hobbies } = user;
 
-        if (!user || !username || !age || !Array.isArray(hobbies)) {
+        if (!validateUserPayload(user)) {
           res.statusCode = StatusCode.ClientErrorBadRequest;
+          res.setHeader('Content-Type', 'application/json');
           res.end(JSON.stringify({ message: UserMessage.UserInvalid }));
         } else {
           const newUser = addUserInDb({ username, age, hobbies });
@@ -78,16 +88,32 @@ export const updateUser: http.RequestListener = (req: http.IncomingMessage, res:
   });
   req.on('end', () => {
     try {
-      const user = JSON.parse(body);
-      if (!user) {
+      const { url }: http.IncomingMessage = req;
+      const urlParts: (string | undefined)[] = url?.split('/').filter(Boolean) || [];
+      const [ basePath, path, userId ]: (string | undefined)[] = urlParts;
+      const user: UserDTO = JSON.parse(body);
+      let updatedUser: User | undefined;
+
+      if (!validateUserId(userId) || !validateUserPayload(user)) {
         res.statusCode = StatusCode.ClientErrorBadRequest;
-        res.end(JSON.stringify({ message: UserMessage.UserInvalid }));
-      } else {
-        const newUser: User = updateUserInDb(user.id, user);
-        res.statusCode = StatusCode.SuccessOK;
         res.setHeader('Content-Type', 'application/json');
-        res.end(JSON.stringify(newUser));
+        res.end(JSON.stringify({ message: UserMessage.UserInvalid }));
+
+        return;
       }
+
+      if (userId) updatedUser = updateUserInDb(userId, user);
+
+      if (!updatedUser) {
+        res.statusCode = StatusCode.ClientErrorNotFound;
+        res.end(JSON.stringify({ message: UserMessage.UserNotFound }));
+
+        return;
+      }
+
+      res.statusCode = StatusCode.SuccessOK;
+      res.setHeader('Content-Type', 'application/json');
+      res.end(JSON.stringify(updatedUser));
     } catch (error) {
       res.statusCode = StatusCode.ServerErrorInternal;
       res.end(JSON.stringify({ message: UserMessage.InternalServerError }));
@@ -100,17 +126,28 @@ export const deleteUser: http.RequestListener = (req: http.IncomingMessage, res:
     const { url }: http.IncomingMessage = req;
     const urlParts: (string | undefined)[] = url?.split('/').filter(Boolean) || [];
     const [ b, p, userId ]: (string | undefined)[] = urlParts;
-    if (!userId) {
-      res.statusCode = StatusCode.ClientErrorNotFound;
+
+    if (!validateUserId(userId)) {
+      res.statusCode = StatusCode.ClientErrorBadRequest;
+      res.setHeader('Content-Type', 'application/json');
       res.end(JSON.stringify({ message: UserMessage.UserInvalid }));
     } else {
-      deleteUserInDb(userId);
-      res.statusCode = StatusCode.SuccessNoContent;
-      res.setHeader('Content-Type', 'application/json');
-      res.end(JSON.stringify({ message: UserMessage.UserDeleted }));
+      if (userId) {
+        const deletedUser = deleteUserInDb(userId);
+
+        if (deletedUser) {
+          res.statusCode = StatusCode.SuccessNoContent;
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify({ message: UserMessage.UserDeleted }));
+        } else {
+          res.statusCode = StatusCode.ClientErrorNotFound;
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify({ message: UserMessage.UserNotFound }));
+        }
+      }
     }
   } catch (error) {
-    res.statusCode = StatusCode.ClientErrorBadRequest;
+    res.statusCode = StatusCode.ServerErrorInternal;
     res.end(JSON.stringify({ message: UserMessage.InternalServerError }));
   }
 };

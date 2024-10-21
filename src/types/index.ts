@@ -13,4 +13,5 @@ export enum UserMessage {
   UserInvalid = 'User invalid',
   UserDeleted = 'User deleted',
   InternalServerError = 'Internal server error',
+  EndpointNotFound = 'Endpoint not found',
 }

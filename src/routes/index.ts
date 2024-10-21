@@ -1,5 +1,6 @@
 import * as http from 'node:http';
 import { createUser, deleteUser, getAllUsers, getUserById, updateUser } from '../controllers/users';
+import { UserMessage } from '../types';
 
 export const userRequestListener: http.RequestListener = (req, res) => {
   const { method, url }: http.IncomingMessage = req;
@@ -27,11 +28,16 @@ export const userRequestListener: http.RequestListener = (req, res) => {
           break;
         default:
           res.writeHead(404, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ message: 'Endpoint not found' }));
+          res.end(JSON.stringify({ message: UserMessage.EndpointNotFound }));
           break;
       }
+
+      return;
     }
 
+    return;
   }
 
+  res.writeHead(404, { 'Content-Type': 'application/json' });
+  res.end(JSON.stringify({ message: UserMessage.EndpointNotFound }));
 }
