@@ -2,18 +2,15 @@ import * as http from 'node:http';
 import { StatusCode } from 'status-code-enum'
 import { User, UserDTO, UserMessage } from '../types';
 import { getUsersInDb, getUserByIdInDb, addUserInDb, updateUserInDb, deleteUserInDb } from '../db';
-import { validateUserId, validateUserPayload } from '../helpers';
+import { validateUserId, validateUserPayload, sendResponse } from '../helpers';
 
 export const getAllUsers: http.RequestListener = (req: http.IncomingMessage, res: http.ServerResponse) => {
   try {
     const users: User[] = getUsersInDb();
 
-    res.statusCode = StatusCode.SuccessOK;
-    res.setHeader('Content-Type', 'application/json');
-    res.end(JSON.stringify(users));
+    sendResponse(res, StatusCode.SuccessOK, users);
   } catch (error) {
-    res.statusCode = StatusCode.ServerErrorInternal;
-    res.end(JSON.stringify({ message: UserMessage.InternalServerError }));
+    sendResponse(res, StatusCode.ServerErrorInternal, { message: UserMessage.InternalServerError });
   }
 }
 
@@ -24,30 +21,24 @@ export const getUserById: http.RequestListener = (req: http.IncomingMessage, res
     const [ basePath, path, userId ]: (string | undefined)[] = urlParts;
 
     if (!validateUserId(userId)) {
-      res.statusCode = StatusCode.ClientErrorBadRequest;
-      res.setHeader('Content-Type', 'application/json');
-      res.end(JSON.stringify({ message: UserMessage.UserInvalid }));
+      sendResponse(res, StatusCode.ClientErrorBadRequest, { message: UserMessage.UserInvalid });
+
       return;
     }
 
     const user: User | undefined = getUserByIdInDb(userId);
     if (!user) {
-      res.statusCode = StatusCode.ClientErrorNotFound;
-      res.end(JSON.stringify({ message: UserMessage.UserNotFound }));
+      sendResponse(res, StatusCode.ClientErrorNotFound, { message: UserMessage.UserNotFound });
     } else {
-      res.statusCode = StatusCode.SuccessOK;
-      res.setHeader('Content-Type', 'application/json');
-      res.end(JSON.stringify(user));
+      sendResponse(res, StatusCode.SuccessOK, user);
     }
   } catch (error) {
-    res.statusCode = StatusCode.ServerErrorInternal;
-    res.end(JSON.stringify({ message: UserMessage.InternalServerError }));
+    sendResponse(res, StatusCode.ServerErrorInternal, { message: UserMessage.InternalServerError });
   }
 }
 
 export const createUser: http.RequestListener = (req: http.IncomingMessage, res: http.ServerResponse) => {
-  if (req.method === 'POST') {
-    let body = '';
+  let body = '';
 
     req.on('data', chunk => {
       body += chunk.toString();
@@ -59,26 +50,16 @@ export const createUser: http.RequestListener = (req: http.IncomingMessage, res:
         const { username, age, hobbies } = user;
 
         if (!validateUserPayload(user)) {
-          res.statusCode = StatusCode.ClientErrorBadRequest;
-          res.setHeader('Content-Type', 'application/json');
-          res.end(JSON.stringify({ message: UserMessage.UserInvalid }));
+          sendResponse(res, StatusCode.ClientErrorBadRequest, { message: UserMessage.UserInvalid });
         } else {
           const newUser = addUserInDb({ username, age, hobbies });
 
-          res.statusCode = StatusCode.SuccessCreated;
-          res.setHeader('Content-Type', 'application/json');
-          res.end(JSON.stringify(newUser));
+          sendResponse(res, StatusCode.SuccessCreated, newUser);
         }
       } catch (error) {
-        console.error(error);
-        res.statusCode = StatusCode.ServerErrorInternal;
-        res.end(JSON.stringify({ message: UserMessage.InternalServerError }));
+        sendResponse(res, StatusCode.ServerErrorInternal, { message: UserMessage.InternalServerError });
       }
     });
-  } else {
-    res.statusCode = StatusCode.ClientErrorMethodNotAllowed;
-    res.end(JSON.stringify({ message: 'Method Not Allowed' }));
-  }
 };
 
 export const updateUser: http.RequestListener = (req: http.IncomingMessage, res: http.ServerResponse) => {
@@ -95,9 +76,7 @@ export const updateUser: http.RequestListener = (req: http.IncomingMessage, res:
       let updatedUser: User | undefined;
 
       if (!validateUserId(userId) || !validateUserPayload(user)) {
-        res.statusCode = StatusCode.ClientErrorBadRequest;
-        res.setHeader('Content-Type', 'application/json');
-        res.end(JSON.stringify({ message: UserMessage.UserInvalid }));
+        sendResponse(res, StatusCode.ClientErrorBadRequest, { message: UserMessage.UserInvalid });
 
         return;
       }
@@ -105,18 +84,14 @@ export const updateUser: http.RequestListener = (req: http.IncomingMessage, res:
       if (userId) updatedUser = updateUserInDb(userId, user);
 
       if (!updatedUser) {
-        res.statusCode = StatusCode.ClientErrorNotFound;
-        res.end(JSON.stringify({ message: UserMessage.UserNotFound }));
+        sendResponse(res, StatusCode.ClientErrorNotFound, { message: UserMessage.UserNotFound });
 
         return;
       }
 
-      res.statusCode = StatusCode.SuccessOK;
-      res.setHeader('Content-Type', 'application/json');
-      res.end(JSON.stringify(updatedUser));
+      sendResponse(res, StatusCode.SuccessOK, updatedUser)
     } catch (error) {
-      res.statusCode = StatusCode.ServerErrorInternal;
-      res.end(JSON.stringify({ message: UserMessage.InternalServerError }));
+      sendResponse(res, StatusCode.ServerErrorInternal, { message: UserMessage.InternalServerError });
     }
   });
 }
@@ -128,26 +103,19 @@ export const deleteUser: http.RequestListener = (req: http.IncomingMessage, res:
     const [ b, p, userId ]: (string | undefined)[] = urlParts;
 
     if (!validateUserId(userId)) {
-      res.statusCode = StatusCode.ClientErrorBadRequest;
-      res.setHeader('Content-Type', 'application/json');
-      res.end(JSON.stringify({ message: UserMessage.UserInvalid }));
+      sendResponse(res, StatusCode.ClientErrorBadRequest, { message: UserMessage.UserInvalid });
     } else {
       if (userId) {
         const deletedUser = deleteUserInDb(userId);
 
         if (deletedUser) {
-          res.statusCode = StatusCode.SuccessNoContent;
-          res.setHeader('Content-Type', 'application/json');
-          res.end(JSON.stringify({ message: UserMessage.UserDeleted }));
+          sendResponse(res, StatusCode.SuccessNoContent, { message: UserMessage.UserDeleted });
         } else {
-          res.statusCode = StatusCode.ClientErrorNotFound;
-          res.setHeader('Content-Type', 'application/json');
-          res.end(JSON.stringify({ message: UserMessage.UserNotFound }));
+          sendResponse(res, StatusCode.ClientErrorNotFound, { message: UserMessage.UserNotFound });
         }
       }
     }
   } catch (error) {
-    res.statusCode = StatusCode.ServerErrorInternal;
-    res.end(JSON.stringify({ message: UserMessage.InternalServerError }));
+    sendResponse(res, StatusCode.ServerErrorInternal, { message: UserMessage.InternalServerError });
   }
 };

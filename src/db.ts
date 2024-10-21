@@ -1,8 +1,9 @@
 import { v4 as uuidv4 } from 'uuid';
 import { User, UserDTO } from './types';
+import { adminUserId } from './helpers';
 
 let users: User[] = [{
-  id: uuidv4(),
+  id: adminUserId,
   username: 'Admin',
   age: 30,
   hobbies: ['JS', 'TS']
