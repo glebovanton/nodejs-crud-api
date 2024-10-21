@@ -1,6 +1,6 @@
 import * as http from 'node:http';
 import { StatusCode } from 'status-code-enum'
-import { User } from '../types';
+import { User, UserMessage } from '../types';
 import { getUsersInDb, getUserByIdInDb, addUserInDb, updateUserInDb, deleteUserInDb } from '../db';
 
 export const getAllUsers: http.RequestListener = (req: http.IncomingMessage, res: http.ServerResponse) => {
@@ -12,7 +12,7 @@ export const getAllUsers: http.RequestListener = (req: http.IncomingMessage, res
     res.end(JSON.stringify(users));
   } catch (error) {
     res.statusCode = StatusCode.ServerErrorInternal;
-    res.end(JSON.stringify({ message: 'Internal server error' }));
+    res.end(JSON.stringify({ message: UserMessage.InternalServerError }));
   }
 }
 
@@ -24,7 +24,7 @@ export const getUserById: http.RequestListener = (req: http.IncomingMessage, res
     const user: User | undefined = getUserByIdInDb(userId);
     if (!user) {
       res.statusCode = StatusCode.ClientErrorNotFound;
-      res.end(JSON.stringify({ message: 'User not found' }));
+      res.end(JSON.stringify({ message: UserMessage.UserNotFound }));
     } else {
       res.statusCode = StatusCode.SuccessOK;
       res.setHeader('Content-Type', 'application/json');
@@ -32,7 +32,7 @@ export const getUserById: http.RequestListener = (req: http.IncomingMessage, res
     }
   } catch (error) {
     res.statusCode = StatusCode.ServerErrorInternal;
-    res.end(JSON.stringify({ message: 'Internal server error' }));
+    res.end(JSON.stringify({ message: UserMessage.InternalServerError }));
   }
 }
 
@@ -51,7 +51,7 @@ export const createUser: http.RequestListener = (req: http.IncomingMessage, res:
 
         if (!user || !username || !age || !Array.isArray(hobbies)) {
           res.statusCode = StatusCode.ClientErrorBadRequest;
-          res.end(JSON.stringify({ message: 'User invalid' }));
+          res.end(JSON.stringify({ message: UserMessage.UserInvalid }));
         } else {
           const newUser = addUserInDb({ username, age, hobbies });
 
@@ -62,7 +62,7 @@ export const createUser: http.RequestListener = (req: http.IncomingMessage, res:
       } catch (error) {
         console.error(error);
         res.statusCode = StatusCode.ServerErrorInternal;
-        res.end(JSON.stringify({ message: 'Internal server error' }));
+        res.end(JSON.stringify({ message: UserMessage.InternalServerError }));
       }
     });
   } else {
@@ -81,7 +81,7 @@ export const updateUser: http.RequestListener = (req: http.IncomingMessage, res:
       const user = JSON.parse(body);
       if (!user) {
         res.statusCode = StatusCode.ClientErrorBadRequest;
-        res.end(JSON.stringify({ message: 'User invalid' }));
+        res.end(JSON.stringify({ message: UserMessage.UserInvalid }));
       } else {
         const newUser: User = updateUserInDb(user.id, user);
         res.statusCode = StatusCode.SuccessOK;
@@ -90,7 +90,7 @@ export const updateUser: http.RequestListener = (req: http.IncomingMessage, res:
       }
     } catch (error) {
       res.statusCode = StatusCode.ServerErrorInternal;
-      res.end(JSON.stringify({ message: 'Internal server error' }));
+      res.end(JSON.stringify({ message: UserMessage.InternalServerError }));
     }
   });
 }
@@ -102,15 +102,15 @@ export const deleteUser: http.RequestListener = (req: http.IncomingMessage, res:
     const [ b, p, userId ]: (string | undefined)[] = urlParts;
     if (!userId) {
       res.statusCode = StatusCode.ClientErrorNotFound;
-      res.end(JSON.stringify({ message: 'User id invalid' }));
+      res.end(JSON.stringify({ message: UserMessage.UserInvalid }));
     } else {
       deleteUserInDb(userId);
       res.statusCode = StatusCode.SuccessNoContent;
       res.setHeader('Content-Type', 'application/json');
-      res.end(JSON.stringify({ message: 'User deleted' }));
+      res.end(JSON.stringify({ message: UserMessage.UserDeleted }));
     }
   } catch (error) {
     res.statusCode = StatusCode.ClientErrorBadRequest;
-    res.end(JSON.stringify({ message: 'Internal server error' }));
+    res.end(JSON.stringify({ message: UserMessage.InternalServerError }));
   }
 };

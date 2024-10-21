@@ -7,3 +7,10 @@ export interface UserDTO {
 export interface User extends UserDTO {
   id: string;
 }
+
+export enum UserMessage {
+  UserNotFound = 'User not found',
+  UserInvalid = 'User invalid',
+  UserDeleted = 'User deleted',
+  InternalServerError = 'Internal server error',
+}
